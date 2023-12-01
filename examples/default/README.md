@@ -11,7 +11,27 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 4.0.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.5.0, < 4.0.0"
+    }
   }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+# This allows us to randomize the region for the resource group.
+module "regions" {
+  source  = "Azure/regions/azurerm"
+  version = ">= 0.3.0"
+}
+
+# This allows us to randomize the region for the resource group.
+resource "random_integer" "region_index" {
+  min = 0
+  max = length(module.regions.regions) - 1
 }
 
 variable "enable_telemetry" {
@@ -27,21 +47,23 @@ DESCRIPTION
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.0"
 }
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
-  location = "MYLOCATION"
+  location = module.regions.regions[random_integer.region_index.result].name
 }
 
 # This is the module call
-module "MYMODULE" {
+module "natgateway" {
   source = "../../"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
-  enable_telemetry = var.enable_telemetry
-  # ...
+  # source             = "Azure/avm-res-network-natgateway/azurerm"
+  name                = module.naming.nat_gateway.name_unique
+  enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
 }
 ```
 
@@ -54,17 +76,22 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
 
+- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
+
 ## Providers
 
 The following providers are used by this module:
 
 - <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.7.0, < 4.0.0)
 
+- <a name="provider_random"></a> [random](#provider\_random) (>= 3.5.0, < 4.0.0)
+
 ## Resources
 
 The following resources are used by this module:
 
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -93,17 +120,23 @@ No outputs.
 
 The following Modules are called:
 
-### <a name="module_MYMODULE"></a> [MYMODULE](#module\_MYMODULE)
+### <a name="module_naming"></a> [naming](#module\_naming)
+
+Source: Azure/naming/azurerm
+
+Version: 0.4.0
+
+### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
 
 Source: ../../
 
 Version:
 
-### <a name="module_naming"></a> [naming](#module\_naming)
+### <a name="module_regions"></a> [regions](#module\_regions)
 
-Source: Azure/naming/azurerm
+Source: Azure/regions/azurerm
 
-Version: 0.3.0
+Version: >= 0.3.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
