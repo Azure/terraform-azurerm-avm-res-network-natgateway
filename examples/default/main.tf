@@ -55,7 +55,7 @@ module "natgateway" {
   source = "../../"
   # source             = "Azure/avm-res-network-natgateway/azurerm"
   name                = module.naming.nat_gateway.name_unique
-  enable_telemetry                = var.enable_telemetry
+  enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
 }
