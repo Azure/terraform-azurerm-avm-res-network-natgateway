@@ -105,3 +105,13 @@ variable "role_assignments" {
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
 }
+
+variable "public_ip_prefix_length" {
+  type        = number
+  description = "(Optional) Public IP-prefix CIDR mask to use. Set to 0 to disable."
+  default     = 0
+  validation {
+    condition     = var.public_ip_prefix_length == 0 || var.public_ip_prefix_length >= 28 && var.public_ip_prefix_length <= 31
+    error_message = "Invalid prefix size."
+  }
+}
