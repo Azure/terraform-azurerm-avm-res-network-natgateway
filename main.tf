@@ -1,21 +1,18 @@
 resource "azurerm_public_ip_prefix" "this" {
   count = var.public_ip_prefix_length > 0 ? 1 : 0
 
-  name = "${var.name}-pippf"
-
   location            = var.location
+  name                = "${var.name}-pippf"
   resource_group_name = var.resource_group_name
-
-  prefix_length = var.public_ip_prefix_length
-
-  tags = var.tags
+  prefix_length       = var.public_ip_prefix_length
+  tags                = var.tags
 }
 
 resource "azurerm_nat_gateway_public_ip_prefix_association" "this" {
   count = var.public_ip_prefix_length > 0 ? 1 : 0
 
-  public_ip_prefix_id = azurerm_public_ip_prefix.this[0].id
   nat_gateway_id      = azurerm_nat_gateway.this.id
+  public_ip_prefix_id = azurerm_public_ip_prefix.this[0].id
 }
 
 resource "azurerm_nat_gateway" "this" {

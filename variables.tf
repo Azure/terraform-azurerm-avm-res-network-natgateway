@@ -1,13 +1,3 @@
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-}
-
 variable "location" {
   type        = string
   description = "(Required) Specifies the supported Azure location where the NAT Gateway should exist. Changing this forces a new resource to be created."
@@ -26,44 +16,20 @@ variable "resource_group_name" {
   nullable    = false
 }
 
-variable "sku_name" {
-  type        = string
-  default     = null
-  description = "(Optional) The SKU which should be used. At this time the only supported value is `Standard`. Defaults to `Standard`."
-}
-
-variable "zones" {
-  type        = set(string)
-  default     = null
-  description = "(Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created."
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see https://aka.ms/avm/telemetryinfo.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
 }
 
 variable "idle_timeout_in_minutes" {
   type        = number
   default     = null
   description = "(Optional) The idle timeout which should be used in minutes. Defaults to `4`."
-}
-
-variable "timeouts" {
-  type = object({
-    create = optional(string)
-    delete = optional(string)
-    read   = optional(string)
-    update = optional(string)
-  })
-  default     = null
-  description = <<-EOT
- - `create` - (Defaults to 60 minutes) Used when creating the NAT Gateway.
- - `delete` - (Defaults to 60 minutes) Used when deleting the NAT Gateway.
- - `read` - (Defaults to 5 minutes) Used when retrieving the NAT Gateway.
- - `update` - (Defaults to 60 minutes) Used when updating the NAT Gateway.
-EOT
-}
-
-variable "tags" {
-  type        = map(any)
-  default     = {}
-  description = "(Optional) A mapping of tags to assign to the resource."
 }
 
 variable "lock" {
@@ -78,6 +44,17 @@ variable "lock" {
   validation {
     condition     = contains(["CanNotDelete", "ReadOnly", "None"], var.lock.kind)
     error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
+  }
+}
+
+variable "public_ip_prefix_length" {
+  type        = number
+  default     = 0
+  description = "(Optional) Public IP-prefix CIDR mask to use. Set to 0 to disable."
+
+  validation {
+    condition     = var.public_ip_prefix_length == 0 || var.public_ip_prefix_length >= 28 && var.public_ip_prefix_length <= 31
+    error_message = "Invalid prefix size."
   }
 }
 
@@ -106,12 +83,36 @@ variable "role_assignments" {
   DESCRIPTION
 }
 
-variable "public_ip_prefix_length" {
-  type        = number
-  description = "(Optional) Public IP-prefix CIDR mask to use. Set to 0 to disable."
-  default     = 0
-  validation {
-    condition     = var.public_ip_prefix_length == 0 || var.public_ip_prefix_length >= 28 && var.public_ip_prefix_length <= 31
-    error_message = "Invalid prefix size."
-  }
+variable "sku_name" {
+  type        = string
+  default     = null
+  description = "(Optional) The SKU which should be used. At this time the only supported value is `Standard`. Defaults to `Standard`."
+}
+
+variable "tags" {
+  type        = map(any)
+  default     = {}
+  description = "(Optional) A mapping of tags to assign to the resource."
+}
+
+variable "timeouts" {
+  type = object({
+    create = optional(string)
+    delete = optional(string)
+    read   = optional(string)
+    update = optional(string)
+  })
+  default     = null
+  description = <<-EOT
+ - `create` - (Defaults to 60 minutes) Used when creating the NAT Gateway.
+ - `delete` - (Defaults to 60 minutes) Used when deleting the NAT Gateway.
+ - `read` - (Defaults to 5 minutes) Used when retrieving the NAT Gateway.
+ - `update` - (Defaults to 60 minutes) Used when updating the NAT Gateway.
+EOT
+}
+
+variable "zones" {
+  type        = set(string)
+  default     = null
+  description = "(Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created."
 }
