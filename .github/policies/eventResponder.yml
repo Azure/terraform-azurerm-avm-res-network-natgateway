@@ -91,6 +91,48 @@ configuration:
           - removeLabel:
               label: "Needs: Triage :mag:"
 
+      - description: 'ITA20 - If the type is feature request, assign the "Type: Feature Request :heavy_plus_sign:" label on the issue'
+        if:
+          - payloadType: Issues
+          - isAction:
+              action: Opened
+          - bodyContains:
+              pattern: |
+                ### Issue Type?
+ 
+                Feature Request
+        then:
+          - addLabel:
+              label: "Type: Feature Request :heavy_plus_sign:"
+ 
+      - description: 'ITA21 - If the type is bug, assign the "Type: Bug :bug:" label on the issue'
+        if:
+          - payloadType: Issues
+          - isAction:
+              action: Opened
+          - bodyContains:
+              pattern: |
+                ### Issue Type?
+ 
+                Bug
+        then:
+          - addLabel:
+              label: "Type: Bug :bug:"
+ 
+      - description: 'ITA22 - If the type is security bug, assign the "Type: Security Bug :lock:" label on the issue'
+        if:
+          - payloadType: Issues
+          - isAction:
+              action: Opened
+          - bodyContains:
+              pattern: |
+                ### Issue Type?
+ 
+                Security Bug
+        then:
+          - addLabel:
+              label: "Type: Security Bug :lock:"
+
       - description: 'ITA23 - Remove the "Status: In PR" label from an issue when it''s closed.'
         if:
           - payloadType: Issues
