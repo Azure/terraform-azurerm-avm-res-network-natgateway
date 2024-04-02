@@ -147,9 +147,9 @@ Default: `null`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
-Description: (Optional) A mapping of tags to assign to the resource.
+Description: A mapping of tags to assign to the resource.
 
-Type: `map(any)`
+Type: `map(string)`
 
 Default: `{}`
 

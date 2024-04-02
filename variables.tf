@@ -94,11 +94,11 @@ variable "sku_name" {
   description = "(Optional) The SKU which should be used. At this time the only supported value is `Standard`. Defaults to `Standard`."
 }
 
-  variable "tags" {
-    type     = map(string)
-    default  = {}
-    description = "A mapping of tags to assign to the resource."
-  }
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "A mapping of tags to assign to the resource."
+}
 
 variable "timeouts" {
   type = object({
