@@ -1,6 +1,6 @@
 plugin "avm" {
   enabled     = true
-  version     = "0.3.0"
+  version     = "0.3.1"
   source      = "github.com/Azure/tflint-ruleset-avm"
   signing_key = <<-KEY
 -----BEGIN PGP PUBLIC KEY BLOCK-----
