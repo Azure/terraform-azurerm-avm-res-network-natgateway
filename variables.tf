@@ -97,7 +97,6 @@ variable "sku_name" {
   variable "tags" {
     type     = map(string)
     default  = {}
-    nullable = false
     description = "A mapping of tags to assign to the resource."
   }
 
