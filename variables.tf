@@ -89,8 +89,9 @@ variable "role_assignments" {
 }
 
 variable "sku_name" {
-  type        = string
-  default     = null
+  type     = map(string)
+  default  = {}
+  nullable = false
   description = "(Optional) The SKU which should be used. At this time the only supported value is `Standard`. Defaults to `Standard`."
 }
 
