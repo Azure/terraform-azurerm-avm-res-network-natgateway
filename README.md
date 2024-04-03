@@ -151,7 +151,7 @@ Description: A mapping of tags to assign to the resource.
 
 Type: `map(string)`
 
-Default: `null`
+Default: `{}`
 
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 

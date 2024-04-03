@@ -95,10 +95,10 @@ variable "sku_name" {
 }
 
 variable "tags" {
-  type     = map(string)
-  default  = {}
-  nullable = false
+  type        = map(string)
+  default     = {}
   description = "A mapping of tags to assign to the resource."
+  nullable    = false
 }
 
 variable "timeouts" {
