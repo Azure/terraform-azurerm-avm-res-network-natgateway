@@ -96,8 +96,9 @@ variable "sku_name" {
 
 variable "tags" {
   type        = map(string)
-  default     = null
+  default     = {}
   description = "A mapping of tags to assign to the resource."
+  nullable    = false
 }
 
 variable "timeouts" {
