@@ -121,5 +121,3 @@ variable "zones" {
   default     = null
   description = "(Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created."
 }
-
-# Testing
