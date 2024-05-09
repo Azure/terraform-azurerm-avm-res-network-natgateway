@@ -175,6 +175,14 @@ object({
 
 Default: `null`
 
+### <a name="input_unused"></a> [unused](#input\_unused)
+
+Description: Unused variable to test the `terraform_unused_declarations` rule.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_zones"></a> [zones](#input\_zones)
 
 Description: (Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created.

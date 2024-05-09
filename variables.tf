@@ -116,14 +116,14 @@ variable "timeouts" {
 EOT
 }
 
+variable "unused" {
+  type        = string
+  default     = null
+  description = "Unused variable to test the `terraform_unused_declarations` rule."
+}
+
 variable "zones" {
   type        = set(string)
   default     = null
   description = "(Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created."
-}
-
-variable "unused" {
-  type        = string
-  description = ""
-  default     = null
 }
