@@ -1,6 +1,6 @@
 variable "location" {
   type        = string
-#  description = "(Required) Specifies the supported Azure location where the NAT Gateway should exist. Changing this forces a new resource to be created."
+  description = "(Required) Specifies the supported Azure location where the NAT Gateway should exist. Changing this forces a new resource to be created."
   nullable    = false
 }
 
