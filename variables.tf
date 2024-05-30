@@ -63,19 +63,18 @@ variable "public_ip_prefix_length" {
 }
 
 variable "role_assignments" {
-    type = map(object({
-      role_definition_id_or_name             = string
-      principal_id                           = string
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-      principal_type                         = optional(string, null)
-    }))
-    default     = {}
-    nullable    = false
-    description = <<DESCRIPTION
+  type = map(object({
+    role_definition_id_or_name             = string
+    principal_id                           = string
+    description                            = optional(string, null)
+    skip_service_principal_aad_check       = optional(bool, false)
+    condition                              = optional(string, null)
+    condition_version                      = optional(string, null)
+    delegated_managed_identity_resource_id = optional(string, null)
+    principal_type                         = optional(string, null)
+  }))
+  default     = {}
+  description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
   - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
@@ -89,7 +88,8 @@ variable "role_assignments" {
   
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
-  }
+  nullable    = false
+}
 
 variable "sku_name" {
   type        = string
