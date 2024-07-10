@@ -4,28 +4,10 @@
 This deploys the module in its simplest form.
 
 ```hcl
-terraform {
-  required_version = ">= 1.0.0"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = ">= 3.7.0, < 4.0.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.5.0, < 4.0.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = ">= 0.3.0"
+  version = "~> 0.6"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -40,10 +22,31 @@ module "naming" {
   version = "0.4.0"
 }
 
+locals {
+  tags = {
+    scenario = "default"
+  }
+}
+
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = module.regions.regions[random_integer.region_index.result].name
   name     = module.naming.resource_group.name_unique
+}
+
+resource "azurerm_virtual_network" "this_vnet" {
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.virtual_network.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+  tags                = local.tags
+}
+
+resource "azurerm_subnet" "this_subnet" {
+  address_prefixes     = ["10.0.1.0/24"]
+  name                 = "${module.naming.subnet.name_unique}-1"
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this_vnet.name
 }
 
 # This is the module call
@@ -54,6 +57,18 @@ module "natgateway" {
   enable_telemetry    = true
   location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
+
+  public_ips = {
+    public_ip_1 = {
+      name = "nat_gw_pip1"
+    }
+  }
+
+  subnet_associations = {
+    subnet_1 = {
+      resource_id = azurerm_subnet.this_subnet.id
+    }
+  }
 }
 ```
 
@@ -62,25 +77,27 @@ module "natgateway" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.0.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.108)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.108)
 
-- <a name="provider_random"></a> [random](#provider\_random) (>= 3.5.0, < 4.0.0)
+- <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
 ## Resources
 
 The following resources are used by this module:
 
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_subnet.this_subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -116,7 +133,7 @@ Version:
 
 Source: Azure/regions/azurerm
 
-Version: >= 0.3.0
+Version: ~> 0.6
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

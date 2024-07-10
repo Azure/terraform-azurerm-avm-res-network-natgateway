@@ -13,19 +13,19 @@
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.6.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.108)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.71.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.108)
 
-- <a name="provider_random"></a> [random](#provider\_random) (>= 3.5.0)
+- <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
 ## Resources
 
@@ -33,10 +33,13 @@ The following resources are used by this module:
 
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_nat_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/nat_gateway) (resource)
+- [azurerm_nat_gateway_public_ip_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/nat_gateway_public_ip_association) (resource)
 - [azurerm_nat_gateway_public_ip_prefix_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/nat_gateway_public_ip_prefix_association) (resource)
+- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_public_ip_prefix.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip_prefix) (resource)
 - [azurerm_resource_group_template_deployment.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
+- [azurerm_subnet_nat_gateway_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_nat_gateway_association) (resource)
 - [random_id.telem](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -102,6 +105,74 @@ object({
 
 Default: `null`
 
+### <a name="input_public_ip_configuration"></a> [public\_ip\_configuration](#input\_public\_ip\_configuration)
+
+Description: This object describes the public IP configuration when creating Nat Gateway's with a public IP.  If creating more than one public IP, then these values will be used for all public IPs.
+
+- `allocation_method`       = (Required) - Defines the allocation method for this IP address. Possible values are Static or Dynamic.
+- `ddos_protection_mode`    = (Optional) - The DDoS protection mode of the public IP. Possible values are Disabled, Enabled, and VirtualNetworkInherited. Defaults to VirtualNetworkInherited.
+- `ddos_protection_plan_id` = (Optional) - The ID of DDoS protection plan associated with the public IP. ddos\_protection\_plan\_id can only be set when ddos\_protection\_mode is Enabled
+- `domain_name_label`       = (Optional) - Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.
+- `idle_timeout_in_minutes` = (Optional) - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.
+- `inherit_tags`            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. - Future functionality leaving in.
+- `ip_version`              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6.
+- `lock_level`              = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+- `sku`                     = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Standard to support zones by default. Changing this forces a new resource to be created. When sku\_tier is set to Global, sku must be set to Standard.
+- `sku_tier`                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional
+- `tags`                    = (Optional) - A mapping of tags to assign to the resource.  
+- `zones`                   = (Optional) - A list of zones where this public IP should be deployed. Defaults to 3 zones. If your region doesn't support zones, then you'll need to set this to null.  
+
+  Example Inputs:
+
+```hcl
+#Standard Regional IPV4 Public IP address configuration
+public_ip_configuration_details = {
+  allocation_method       = "Static"
+  ddos_protection_mode    = "VirtualNetworkInherited"
+  idle_timeout_in_minutes = 30
+  ip_version              = "IPv4"
+  sku_tier                = "Regional"
+  sku                     = "Standard"
+}
+```
+
+Type:
+
+```hcl
+object({
+    allocation_method       = optional(string, "Static")
+    ddos_protection_mode    = optional(string, "VirtualNetworkInherited")
+    ddos_protection_plan_id = optional(string)
+    domain_name_label       = optional(string)
+    idle_timeout_in_minutes = optional(number, 30)
+    inherit_tags            = optional(bool, false)
+    ip_version              = optional(string, "IPv4")
+    lock_level              = optional(string, null)
+    sku                     = optional(string, "Standard")
+    sku_tier                = optional(string, "Regional")
+    tags                    = optional(map(string), null)
+    zones                   = optional(list(string), ["1", "2", "3"])
+  })
+```
+
+Default:
+
+```json
+{
+  "allocation_method": "Static",
+  "ddos_protection_mode": "VirtualNetworkInherited",
+  "idle_timeout_in_minutes": 30,
+  "ip_version": "IPv4",
+  "sku": "Standard",
+  "sku_tier": "Regional",
+  "zones": [
+    "1",
+    "2",
+    "3"
+  ]
+}
+```
+
 ### <a name="input_public_ip_prefix_length"></a> [public\_ip\_prefix\_length](#input\_public\_ip\_prefix\_length)
 
 Description: (Optional) Public IP-prefix CIDR mask to use. Set to 0 to disable.
@@ -109,6 +180,33 @@ Description: (Optional) Public IP-prefix CIDR mask to use. Set to 0 to disable.
 Type: `number`
 
 Default: `0`
+
+### <a name="input_public_ips"></a> [public\_ips](#input\_public\_ips)
+
+Description: This map will define between 1 and 16 public IP's to assign to this NAT Gateway. The `public_ip_configuration` is used to configure common elements across all public IPs."
+
+- `<map key>` - (Required) - The unique arbitrary map key is used by terraform to plan the number of public IP's to create
+  - `name` - The name to use for this public IP resource
+
+Example Input:
+
+```hcl
+public_ips = {
+  ip_1 = {
+    name = "nat_gw_pip_1"
+  }
+}
+```
+
+Type:
+
+```hcl
+map(object({
+    name = string
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
@@ -149,6 +247,34 @@ Description: (Optional) The SKU which should be used. At this time the only supp
 Type: `string`
 
 Default: `null`
+
+### <a name="input_subnet_associations"></a> [subnet\_associations](#input\_subnet\_associations)
+
+Description: This map will define any subnet associations for this nat gateway. The
+
+- `<map key>` - (Required) - The unique arbitrary map key is used by terraform to plan the number of subnet associations to create
+  - `resource_id` - (Required) - The Azure Resource ID for the subnet to be associated to this NAT Gateway
+
+Example Input:
+
+```hcl
+subnet_associations = {
+  subnet_1 = {
+    resource_id = azurerm_subnet.example.id
+  }
+}
+```
+
+Type:
+
+```hcl
+map(object({
+    resource_id = string
+    }
+  ))
+```
+
+Default: `{}`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 

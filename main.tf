@@ -63,8 +63,8 @@ resource "azurerm_nat_gateway" "this" {
 resource "azurerm_subnet_nat_gateway_association" "this" {
   for_each = var.subnet_associations
 
-  subnet_id      = each.value.resource_id
   nat_gateway_id = azurerm_nat_gateway.this.id
+  subnet_id      = each.value.resource_id
 }
 
 resource "azurerm_management_lock" "this" {

@@ -51,29 +51,6 @@ variable "lock" {
   }
 }
 
-variable "public_ips" {
-  type = map(object({
-    name = string
-  }))
-  default = {}
-  description = <<PUBLIC_IPS
-This map will define between 1 and 16 public IP's to assign to this NAT Gateway. The `public_ip_configuration` is used to configure common elements across all public IPs."
-
-- `<map key>` - (Required) - The unique arbitrary map key is used by terraform to plan the number of public IP's to create
-  - `name` - The name to use for this public IP resource
-
-Example Input: 
-
-```hcl
-public_ips = {
-  ip_1 = {
-    name = "nat_gw_pip_1"
-  }
-}
-```
-PUBLIC_IPS
-}
-
 variable "public_ip_configuration" {
   type = object({
     allocation_method       = optional(string, "Static")
@@ -87,7 +64,7 @@ variable "public_ip_configuration" {
     sku                     = optional(string, "Standard")
     sku_tier                = optional(string, "Regional")
     tags                    = optional(map(string), null)
-    zones                   = optional(list(string), ["1","2","3"])
+    zones                   = optional(list(string), ["1", "2", "3"])
   })
   default = {
     allocation_method       = "Static"
@@ -96,7 +73,7 @@ variable "public_ip_configuration" {
     ip_version              = "IPv4"
     sku_tier                = "Regional"
     sku                     = "Standard"
-    zones                   = ["1","2","3"]
+    zones                   = ["1", "2", "3"]
   }
   description = <<PUBLIC_IP_CONFIGURATION_DETAILS
 This object describes the public IP configuration when creating Nat Gateway's with a public IP.  If creating more than one public IP, then these values will be used for all public IPs.
@@ -142,6 +119,29 @@ variable "public_ip_prefix_length" {
   }
 }
 
+variable "public_ips" {
+  type = map(object({
+    name = string
+  }))
+  default     = {}
+  description = <<PUBLIC_IPS
+This map will define between 1 and 16 public IP's to assign to this NAT Gateway. The `public_ip_configuration` is used to configure common elements across all public IPs."
+
+- `<map key>` - (Required) - The unique arbitrary map key is used by terraform to plan the number of public IP's to create
+  - `name` - The name to use for this public IP resource
+
+Example Input: 
+
+```hcl
+public_ips = {
+  ip_1 = {
+    name = "nat_gw_pip_1"
+  }
+}
+```
+PUBLIC_IPS
+}
+
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
@@ -179,10 +179,10 @@ variable "sku_name" {
 
 variable "subnet_associations" {
   type = map(object({
-      resource_id = string
+    resource_id = string
     }
   ))
-  default = {}
+  default     = {}
   description = <<SUBNET_ASSOCIATIONS
 This map will define any subnet associations for this nat gateway. The 
 
@@ -199,7 +199,6 @@ subnet_associations = {
 }
 ```
 SUBNET_ASSOCIATIONS
-
 }
 
 variable "tags" {
