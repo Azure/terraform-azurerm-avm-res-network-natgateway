@@ -15,6 +15,31 @@ resource "azurerm_nat_gateway_public_ip_prefix_association" "this" {
   public_ip_prefix_id = azurerm_public_ip_prefix.this[0].id
 }
 
+resource "azurerm_public_ip" "this" {
+  for_each = var.public_ips
+
+  allocation_method       = var.public_ip_configuration.allocation_method
+  location                = var.location
+  name                    = each.value.name
+  resource_group_name     = var.resource_group_name
+  ddos_protection_mode    = var.public_ip_configuration.ddos_protection_mode
+  ddos_protection_plan_id = var.public_ip_configuration.ddos_protection_plan_id
+  domain_name_label       = var.public_ip_configuration.domain_name_label
+  idle_timeout_in_minutes = var.public_ip_configuration.idle_timeout_in_minutes
+  ip_version              = var.public_ip_configuration.ip_version
+  sku                     = var.public_ip_configuration.sku
+  sku_tier                = var.public_ip_configuration.sku_tier
+  tags                    = var.public_ip_configuration.tags != null && var.public_ip_configuration != {} ? var.public_ip_configuration.tags : var.tags
+  zones                   = var.public_ip_configuration.zones
+}
+
+resource "azurerm_nat_gateway_public_ip_association" "this" {
+  for_each = var.public_ips
+
+  nat_gateway_id       = azurerm_nat_gateway.this.id
+  public_ip_address_id = azurerm_public_ip.this[each.key].id
+}
+
 resource "azurerm_nat_gateway" "this" {
   location                = var.location
   name                    = var.name
@@ -33,6 +58,13 @@ resource "azurerm_nat_gateway" "this" {
       update = timeouts.value.update
     }
   }
+}
+
+resource "azurerm_subnet_nat_gateway_association" "this" {
+  for_each = var.subnet_associations
+
+  nat_gateway_id = azurerm_nat_gateway.this.id
+  subnet_id      = each.value.resource_id
 }
 
 resource "azurerm_management_lock" "this" {
