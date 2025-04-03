@@ -122,7 +122,7 @@ Description: This object describes the public IP configuration when creating Nat
 
 ```hcl
 #Standard Regional IPV4 Public IP address configuration
-public_ip_configuration_details = {
+public_ip_configuration = {
   allocation_method       = "Static"
   ddos_protection_mode    = "VirtualNetworkInherited"
   idle_timeout_in_minutes = 30
