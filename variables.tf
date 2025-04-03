@@ -75,7 +75,7 @@ variable "public_ip_configuration" {
     sku                     = "Standard"
     zones                   = ["1", "2", "3"]
   }
-  description = <<PUBLIC_IP_CONFIGURATION_DETAILS
+  description = <<PUBLIC_IP_CONFIGURATION
 This object describes the public IP configuration when creating Nat Gateway's with a public IP.  If creating more than one public IP, then these values will be used for all public IPs.
 
 - `allocation_method`       = (Required) - Defines the allocation method for this IP address. Possible values are Static or Dynamic.
@@ -95,7 +95,7 @@ This object describes the public IP configuration when creating Nat Gateway's wi
 
 ```hcl
 #Standard Regional IPV4 Public IP address configuration
-public_ip_configuration_details = {
+public_ip_configuration = {
   allocation_method       = "Static"
   ddos_protection_mode    = "VirtualNetworkInherited"
   idle_timeout_in_minutes = 30
@@ -104,7 +104,7 @@ public_ip_configuration_details = {
   sku                     = "Standard"
 }
 ```
-PUBLIC_IP_CONFIGURATION_DETAILS
+PUBLIC_IP_CONFIGURATION
   nullable    = false
 }
 
