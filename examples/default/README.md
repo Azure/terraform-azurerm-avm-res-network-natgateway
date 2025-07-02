@@ -35,10 +35,10 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_virtual_network" "this_vnet" {
-  address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  address_space       = ["10.0.0.0/16"]
   tags                = local.tags
 }
 
@@ -52,18 +52,17 @@ resource "azurerm_subnet" "this_subnet" {
 # This is the module call
 module "natgateway" {
   source = "../../"
+
+  location = azurerm_resource_group.this.location
   # source             = "Azure/avm-res-network-natgateway/azurerm"
   name                = module.naming.nat_gateway.name_unique
-  enable_telemetry    = true
-  location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
-
+  enable_telemetry    = true
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
     }
   }
-
   subnet_associations = {
     subnet_1 = {
       resource_id = azurerm_subnet.this_subnet.id
