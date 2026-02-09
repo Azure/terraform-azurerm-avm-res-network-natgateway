@@ -60,7 +60,7 @@ DESCRIPTION
 
 variable "idle_timeout_in_minutes" {
   type        = number
-  default     = null
+  default     = 4
   description = "(Optional) The idle timeout which should be used in minutes. Defaults to `4`."
 }
 

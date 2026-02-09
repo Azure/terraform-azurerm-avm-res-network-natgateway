@@ -120,7 +120,7 @@ Description: (Optional) The idle timeout which should be used in minutes. Defaul
 
 Type: `number`
 
-Default: `null`
+Default: `4`
 
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
