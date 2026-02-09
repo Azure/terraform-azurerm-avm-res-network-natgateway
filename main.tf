@@ -5,6 +5,23 @@ resource "azapi_resource" "this" {
   name      = var.name
   parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${var.resource_group_name}"
   type      = "Microsoft.Network/natGateways@2025-03-01"
+  tags      = var.tags
+
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+  
   body = {
     properties = {
       idleTimeoutInMinutes = var.idle_timeout_in_minutes
@@ -46,11 +63,6 @@ resource "azapi_resource" "this" {
     }
     zones = var.sku_name == "StandardV2" ? ["1", "2", "3"] : var.zones
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  tags           = var.tags
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   lifecycle {
     precondition {
@@ -138,7 +150,7 @@ resource "azapi_resource" "role_assignment" {
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   body = {
     properties = {
-      roleDefinitionId                   = strcontains(lower(each.value.role_definition_id), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id : "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value.role_definition_id}"
+      roleDefinitionId                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value.role_definition_id_or_name}"
       principalId                        = each.value.principal_id
       principalType                      = each.value.principal_type
       description                        = each.value.description
