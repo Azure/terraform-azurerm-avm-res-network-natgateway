@@ -72,17 +72,17 @@ module "natgateway" {
     public_ip_1 = {
       idle_timeout_in_minutes = 15
       sku                     = "Standard"
-      zones                   = ["1", "2"]
+      zones                   = ["1", "2", "3"]
     }
     public_ip_2 = {
       idle_timeout_in_minutes = 10
       sku                     = "Standard"
-      zones                   = ["1", "2"]
+      zones                   = ["1", "2", "3"]
     }
     public_ip_prefix_1 = {
       idle_timeout_in_minutes = 5
       sku                     = "Standard"
-      zones                   = ["1", "2"]
+      zones                   = ["1", "2", "3"]
     }
   }
   public_ip_prefixes = {
