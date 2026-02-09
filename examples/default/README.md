@@ -78,13 +78,18 @@ module "natgateway" {
   public_ip_configuration = {
     public_ip_1 = {
       idle_timeout_in_minutes = 15
+      sku                     = "StandardV2"
+      zones                   = ["1", "2", "3"]
     }
     public_ip_2 = {
       idle_timeout_in_minutes = 10
+      sku                     = "StandardV2"
+      zones                   = ["1", "2", "3"]
     }
     public_ip_prefix_1 = {
       idle_timeout_in_minutes = 5
-      # zones                   = ["1", "2"] # Example of granular zone config
+      sku                     = "StandardV2"
+      zones                   = ["1", "2", "3"]
     }
   }
   public_ip_prefixes = {
@@ -101,6 +106,7 @@ module "natgateway" {
       name = "nat_gw_pip2"
     }
   }
+  sku_name = "StandardV2"
   subnet_associations = {
     subnet_1 = {
       resource_id    = azapi_resource.this_subnet.id
