@@ -1,92 +1,221 @@
-resource "azurerm_public_ip_prefix" "this" {
-  count = var.public_ip_prefix_length > 0 ? 1 : 0
+data "azapi_client_config" "this" {}
 
-  location            = var.location
-  name                = "${var.name}-pippf"
-  resource_group_name = var.resource_group_name
-  prefix_length       = var.public_ip_prefix_length
-  tags                = var.tags
-}
+resource "azapi_resource" "this" {
+  location  = var.location
+  name      = var.name
+  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${var.resource_group_name}"
+  type      = "Microsoft.Network/natGateways@2025-03-01"
+  body = {
+    properties = {
+      idleTimeoutInMinutes = var.idle_timeout_in_minutes
+      publicIpAddresses = concat([
+        for key, pip in azapi_resource.public_ip : {
+          id = pip.id
+        }
+        if lower(try(var.public_ip_configuration[key].ip_version, local.default_pip_config.ip_version)) == "ipv4"
+        ],
+        [for id in var.public_ip_resource_ids : { id = id }]
+      )
+      publicIpAddressesV6 = concat([
+        for key, pip in azapi_resource.public_ip : {
+          id = pip.id
+        }
+        if lower(try(var.public_ip_configuration[key].ip_version, local.default_pip_config.ip_version)) == "ipv6"
+        ],
+        [for id in var.public_ip_v6_resource_ids : { id = id }]
+      )
+      publicIpPrefixes = concat([
+        for key, pf in azapi_resource.public_ip_prefix : {
+          id = pf.id
+        }
+        if lower(try(var.public_ip_configuration[key].ip_version, local.default_pip_config.ip_version)) == "ipv4"
+        ],
+        [for id in var.public_ip_prefix_resource_ids : { id = id }]
+      )
+      publicIpPrefixesV6 = concat([
+        for key, pf in azapi_resource.public_ip_prefix : {
+          id = pf.id
+        }
+        if lower(try(var.public_ip_configuration[key].ip_version, local.default_pip_config.ip_version)) == "ipv6"
+        ],
+        [for id in var.public_ip_prefix_v6_resource_ids : { id = id }]
+      )
+    }
+    sku = {
+      name = var.sku_name
+    }
+    zones = var.sku_name == "StandardV2" ? ["1", "2", "3"] : var.zones
+  }
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  tags           = var.tags
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
-resource "azurerm_nat_gateway_public_ip_prefix_association" "this" {
-  count = var.public_ip_prefix_length > 0 ? 1 : 0
-
-  nat_gateway_id      = azurerm_nat_gateway.this.id
-  public_ip_prefix_id = azurerm_public_ip_prefix.this[0].id
-}
-
-resource "azurerm_public_ip" "this" {
-  for_each = var.public_ips
-
-  allocation_method       = var.public_ip_configuration.allocation_method
-  location                = var.location
-  name                    = each.value.name
-  resource_group_name     = var.resource_group_name
-  ddos_protection_mode    = var.public_ip_configuration.ddos_protection_mode
-  ddos_protection_plan_id = var.public_ip_configuration.ddos_protection_plan_id
-  domain_name_label       = var.public_ip_configuration.domain_name_label
-  idle_timeout_in_minutes = var.public_ip_configuration.idle_timeout_in_minutes
-  ip_version              = var.public_ip_configuration.ip_version
-  sku                     = var.public_ip_configuration.sku
-  sku_tier                = var.public_ip_configuration.sku_tier
-  tags                    = var.public_ip_configuration.tags != null && var.public_ip_configuration != {} ? var.public_ip_configuration.tags : var.tags
-  zones                   = var.public_ip_configuration.zones
-}
-
-resource "azurerm_nat_gateway_public_ip_association" "this" {
-  for_each = var.public_ips
-
-  nat_gateway_id       = azurerm_nat_gateway.this.id
-  public_ip_address_id = azurerm_public_ip.this[each.key].id
-}
-
-resource "azurerm_nat_gateway" "this" {
-  location                = var.location
-  name                    = var.name
-  resource_group_name     = var.resource_group_name
-  idle_timeout_in_minutes = var.idle_timeout_in_minutes
-  sku_name                = var.sku_name
-  tags                    = var.tags
-  zones                   = var.zones
-
-  dynamic "timeouts" {
-    for_each = var.timeouts == null ? [] : [var.timeouts]
-
-    content {
-      create = timeouts.value.create
-      delete = timeouts.value.delete
-      read   = timeouts.value.read
-      update = timeouts.value.update
+  lifecycle {
+    precondition {
+      condition     = var.sku_name == "StandardV2" && length(var.public_ips) > 0 ? alltrue([for c in values(var.public_ip_configuration) : c.sku == "StandardV2"]) : true
+      error_message = "When using StandardV2 SKU for NAT Gateway, all Public IP configurations must specify StandardV2 SKU."
+    }
+    precondition {
+      condition     = var.sku_name == "StandardV2" && length(var.public_ip_prefixes) > 0 ? alltrue([for c in values(var.public_ip_configuration) : c.sku == "StandardV2"]) : true
+      error_message = "When using StandardV2 SKU for NAT Gateway, the Public IP Prefix configurations must specify StandardV2 SKU."
+    }
+    precondition {
+      condition     = var.sku_name == "Standard" && var.zones != null ? length(var.zones) <= 1 : true
+      error_message = "Standard SKU NAT Gateway supports only a single zone (Zonal) or no zone (Regional)."
     }
   }
 }
 
-resource "azurerm_subnet_nat_gateway_association" "this" {
+resource "azapi_resource_action" "subnet_association" {
   for_each = var.subnet_associations
 
-  nat_gateway_id = azurerm_nat_gateway.this.id
-  subnet_id      = each.value.resource_id
+  method      = "PUT"
+  resource_id = each.value.resource_id
+  type        = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
+  body = {
+    properties = {
+      addressPrefix             = each.value.address_prefix
+      addressPrefixes           = each.value.address_prefixes
+      ipamPoolPrefixAllocations = each.value.ipam_pool_id != null ? [{ ipamPoolId = each.value.ipam_pool_id, allocatedAddressPrefix = each.value.address_prefix }] : null
+      natGateway = {
+        id = azapi_resource.this.id
+      }
+    }
+  }
+  headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  when    = "apply"
 }
 
-resource "azurerm_management_lock" "this" {
+resource "azapi_resource_action" "subnet_disassociation" {
+  for_each = var.subnet_associations
+
+  method      = "PUT"
+  resource_id = each.value.resource_id
+  type        = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
+  body = {
+    properties = {
+      addressPrefix             = each.value.address_prefix
+      addressPrefixes           = each.value.address_prefixes
+      ipamPoolPrefixAllocations = each.value.ipam_pool_id != null ? [{ ipamPoolId = each.value.ipam_pool_id, allocatedAddressPrefix = each.value.address_prefix }] : null
+      natGateway                = null
+    }
+  }
+  headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  when    = "destroy"
+
+  depends_on = [azapi_resource.this]
+}
+
+resource "azapi_resource" "lock" {
   count = var.lock != null ? 1 : 0
 
-  lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
-  scope      = azurerm_nat_gateway.this.id
-  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+  name      = coalesce(var.lock.name, "lock-${var.lock.kind}")
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.Authorization/locks@2020-05-01"
+  body = {
+    properties = {
+      level = var.lock.kind
+      notes = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+    }
+  }
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
-resource "azurerm_role_assignment" "this" {
+resource "random_uuid" "role_assignment_name" {
+  for_each = var.role_assignments
+}
+
+resource "azapi_resource" "role_assignment" {
   for_each = var.role_assignments
 
-  principal_id                           = each.value.principal_id
-  scope                                  = azurerm_nat_gateway.this.id
-  condition                              = each.value.condition
-  condition_version                      = each.value.condition_version
-  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
-  principal_type                         = each.value.principal_type
-  role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
-  role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
+  name      = random_uuid.role_assignment_name[each.key].result
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  body = {
+    properties = {
+      roleDefinitionId                   = strcontains(lower(each.value.role_definition_id), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id : "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value.role_definition_id}"
+      principalId                        = each.value.principal_id
+      principalType                      = each.value.principal_type
+      description                        = each.value.description
+      condition                          = each.value.condition
+      conditionVersion                   = each.value.condition_version
+      delegatedManagedIdentityResourceId = each.value.delegated_managed_identity_resource_id
+    }
+  }
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  # AVM requires retries for role assignments for improved reliability
+  retry = {
+    error_message_regex = ["PrincipalNotFound"]
+  }
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+}
+
+resource "azapi_resource" "diagnostic_settings" {
+  for_each = var.diagnostic_settings
+
+  name      = try(each.value.name, "diag-${each.key}")
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.Insights/diagnosticSettings@2021-05-01-preview"
+  body = {
+    properties = {
+      storageAccountId            = each.value.storage_account_resource_id
+      workspaceId                 = each.value.workspace_resource_id
+      eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
+      eventHubName                = each.value.event_hub_name
+      marketplacePartnerId        = each.value.marketplace_partner_resource_id
+      logAnalyticsDestinationType = each.value.log_analytics_destination_type
+
+      logs = concat(
+        [
+          for category in each.value.log_categories : {
+            category = category
+            enabled  = true
+            retentionPolicy = {
+              enabled = false
+              days    = 0
+            }
+          }
+        ],
+        [
+          for group in each.value.log_groups : {
+            categoryGroup = group
+            enabled       = true
+            retentionPolicy = {
+              enabled = false
+              days    = 0
+            }
+          }
+        ]
+      )
+
+      metrics = [
+        for category in each.value.metric_categories : {
+          category = category
+          enabled  = true
+          retentionPolicy = {
+            enabled = false
+            days    = 0
+          }
+        }
+      ]
+    }
+  }
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  lifecycle {
+    precondition {
+      condition     = var.sku_name == "StandardV2" || (length(each.value.log_categories) == 0 && length(each.value.log_groups) == 0)
+      error_message = "Diagnostic Logs are only supported for the 'StandardV2' SKU. The 'Standard' SKU only supports Metrics. Please ensure 'log_categories' and 'log_groups' are empty when using 'Standard' SKU."
+    }
+  }
 }

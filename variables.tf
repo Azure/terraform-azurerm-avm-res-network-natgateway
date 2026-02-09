@@ -16,6 +16,37 @@ variable "resource_group_name" {
   nullable    = false
 }
 
+variable "diagnostic_settings" {
+  type = map(object({
+    name                                     = optional(string, null)
+    log_categories                           = optional(set(string), [])
+    log_groups                               = optional(set(string), ["allLogs"])
+    metric_categories                        = optional(set(string), ["AllMetrics"])
+    log_analytics_destination_type           = optional(string, "Dedicated")
+    workspace_resource_id                    = optional(string, null)
+    storage_account_resource_id              = optional(string, null)
+    event_hub_authorization_rule_resource_id = optional(string, null)
+    event_hub_name                           = optional(string, null)
+    marketplace_partner_resource_id          = optional(string, null)
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+- `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic settings.
+- `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
+- `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`. For StandardV2, `NatGatewayFlowLogsV1` is available within `allLogs`.
+- `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
+- `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
+- `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
+- `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
+- `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
+- `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
+- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace Partner Logic App to send logs and metrics to.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -53,7 +84,7 @@ variable "lock" {
 }
 
 variable "public_ip_configuration" {
-  type = object({
+  type = map(object({
     allocation_method       = optional(string, "Static")
     ddos_protection_mode    = optional(string, "VirtualNetworkInherited")
     ddos_protection_plan_id = optional(string)
@@ -61,63 +92,100 @@ variable "public_ip_configuration" {
     idle_timeout_in_minutes = optional(number, 30)
     inherit_tags            = optional(bool, false)
     ip_version              = optional(string, "IPv4")
-    lock_level              = optional(string, null)
-    sku                     = optional(string, "Standard")
-    sku_tier                = optional(string, "Regional")
-    tags                    = optional(map(string), null)
-    zones                   = optional(list(string), ["1", "2", "3"])
-  })
-  default = {
-    allocation_method       = "Static"
-    ddos_protection_mode    = "VirtualNetworkInherited"
-    idle_timeout_in_minutes = 30
-    ip_version              = "IPv4"
-    sku_tier                = "Regional"
-    sku                     = "Standard"
-    zones                   = ["1", "2", "3"]
-  }
+    lock = optional(object({
+      kind = string
+      name = optional(string, null)
+    }), null)
+    sku      = optional(string, "StandardV2")
+    sku_tier = optional(string, "Regional")
+    tags     = optional(map(string), null)
+    zones    = optional(list(string), ["1", "2", "3"])
+  }))
+  default     = {}
   description = <<PUBLIC_IP_CONFIGURATION_DETAILS
-This object describes the public IP configuration when creating Nat Gateway's with a public IP.  If creating more than one public IP, then these values will be used for all public IPs.
+This map describes the public IP configuration. Keys in this map should match keys in `public_ips` or `public_ip_prefixes`.
 
-- `allocation_method`       = (Required) - Defines the allocation method for this IP address. Possible values are Static or Dynamic.
+- `allocation_method`       = (Optional) - Defines the allocation method for this IP address. Possible values are Static or Dynamic. Defaults to Static.
 - `ddos_protection_mode`    = (Optional) - The DDoS protection mode of the public IP. Possible values are Disabled, Enabled, and VirtualNetworkInherited. Defaults to VirtualNetworkInherited.
 - `ddos_protection_plan_id` = (Optional) - The ID of DDoS protection plan associated with the public IP. ddos_protection_plan_id can only be set when ddos_protection_mode is Enabled
 - `domain_name_label`       = (Optional) - Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.
-- `idle_timeout_in_minutes` = (Optional) - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.
-- `inherit_tags`            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. - Future functionality leaving in.
-- `ip_version`              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6.
-- `lock_level`              = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-- `sku`                     = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Standard to support zones by default. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
-- `sku_tier`                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional
+- `idle_timeout_in_minutes` = (Optional) - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes. Defaults to 30.
+- `inherit_tags`            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied.
+- `ip_version`              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6. Defaults to IPv4.
+- `lock`                    = (Optional) - The lock level to apply to the public IP. Default is `null`.
+- `sku`                     = (Optional) - The SKU of the Public IP. Accepted values are Basic, Standard and StandardV2. Defaults to StandardV2.
+- `sku_tier`                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional.
 - `tags`                    = (Optional) - A mapping of tags to assign to the resource.    
-- `zones`                   = (Optional) - A list of zones where this public IP should be deployed. Defaults to 3 zones. If your region doesn't support zones, then you'll need to set this to null.
+- `zones`                   = (Optional) - A list of zones where this public IP should be deployed. Defaults to 3 zones.
   
-  Example Inputs:
+  Example Input:
 
 ```hcl
-#Standard Regional IPV4 Public IP address configuration
-public_ip_configuration_details = {
-  allocation_method       = "Static"
-  ddos_protection_mode    = "VirtualNetworkInherited"
-  idle_timeout_in_minutes = 30
-  ip_version              = "IPv4"
-  sku_tier                = "Regional"
-  sku                     = "Standard"
+public_ip_configuration = {
+  ip_1 = {
+    idle_timeout_in_minutes = 15
+    sku                     = "StandardV2"
+  },
+  prefix_1 = {
+    sku   = "StandardV2"
+    zones = ["1", "2", "3"]
+  }
 }
 ```
 PUBLIC_IP_CONFIGURATION_DETAILS
   nullable    = false
 }
 
-variable "public_ip_prefix_length" {
-  type        = number
-  default     = 0
-  description = "(Optional) Public IP-prefix CIDR mask to use. Set to 0 to disable."
+variable "public_ip_prefix_resource_ids" {
+  type        = set(string)
+  default     = []
+  description = "(Optional) A list of existing Public IP Prefix resource IDs to associate with the NAT Gateway. These must be IPv4 prefixes."
+  nullable    = false
+}
 
-  validation {
-    condition     = var.public_ip_prefix_length == 0 || var.public_ip_prefix_length >= 28 && var.public_ip_prefix_length <= 31
-    error_message = "Invalid prefix size."
+variable "public_ip_prefix_v6_resource_ids" {
+  type        = set(string)
+  default     = []
+  description = "(Optional) A list of existing Public IP Prefix resource IDs (IPv6) to associate with the NAT Gateway. Only supported when `sku_name` is `StandardV2`."
+  nullable    = false
+}
+
+variable "public_ip_prefixes" {
+  type = map(object({
+    name          = string
+    prefix_length = optional(number, 30)
+  }))
+  default     = {}
+  description = <<PUBLIC_IP_PREFIXES
+This map will define public IP prefixes.
+- `<map key>` - The unique arbitrary map key.
+  - `name` - The name to use for this public IP prefix resource.
+  - `prefix_length` - (Optional) The Length of the Public IP Prefix. Defaults to 30.
+
+  Example Input: 
+```hcl
+public_ip_prefixes = {
+  prefix_1 = {
+    name = "nat_gw_prefix_1"
+    prefix_length = 31
   }
+}
+```
+PUBLIC_IP_PREFIXES
+}
+
+variable "public_ip_resource_ids" {
+  type        = set(string)
+  default     = []
+  description = "(Optional) A list of existing Public IP resource IDs to associate with the NAT Gateway. These must be IPv4 addresses."
+  nullable    = false
+}
+
+variable "public_ip_v6_resource_ids" {
+  type        = set(string)
+  default     = []
+  description = "(Optional) A list of existing Public IP resource IDs (IPv6) to associate with the NAT Gateway. Only supported when `sku_name` is `StandardV2`."
+  nullable    = false
 }
 
 variable "public_ips" {
@@ -128,7 +196,7 @@ variable "public_ips" {
   description = <<PUBLIC_IPS
 This map will define between 1 and 16 public IP's to assign to this NAT Gateway. The `public_ip_configuration` is used to configure common elements across all public IPs."
 
-- `<map key>` - (Required) - The unique arbitrary map key is used by terraform to plan the number of public IP's to create
+- `<map key>` - The unique arbitrary map key is used by terraform to plan the number of public IP's to create
   - `name` - The name to use for this public IP resource
 
 Example Input: 
@@ -145,7 +213,7 @@ PUBLIC_IPS
 
 variable "role_assignments" {
   type = map(object({
-    role_definition_id_or_name             = string
+    role_definition_id                     = string
     principal_id                           = string
     description                            = optional(string, null)
     skip_service_principal_aad_check       = optional(bool, false)
@@ -158,7 +226,7 @@ variable "role_assignments" {
   description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
-  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+  - `role_definition_id` - The ID of the role definition to assign to the principal.
   - `principal_id` - The ID of the principal to assign the role to.
   - `description` - (Optional) The description of the role assignment.
   - `skip_service_principal_aad_check` - (Optional) If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
@@ -174,32 +242,55 @@ variable "role_assignments" {
 
 variable "sku_name" {
   type        = string
-  default     = null
-  description = "(Optional) The SKU which should be used. At this time the only supported value is `Standard`. Defaults to `Standard`."
+  default     = "StandardV2"
+  description = "(Optional) The SKU which should be used. Possible values are `Standard` and `StandardV2`. Defaults to `StandardV2`."
+
+  validation {
+    condition     = contains(["Standard", "StandardV2"], var.sku_name == null ? "StandardV2" : var.sku_name)
+    error_message = "The SKU name must be either `Standard` or `StandardV2`."
+  }
 }
 
 variable "subnet_associations" {
   type = map(object({
-    resource_id = string
-    }
-  ))
+    resource_id      = string
+    address_prefix   = optional(string)
+    address_prefixes = optional(list(string))
+    ipam_pool_id     = optional(string)
+  }))
   default     = {}
   description = <<SUBNET_ASSOCIATIONS
 This map will define any subnet associations for this nat gateway. The 
 
-- `<map key>` - (Required) - The unique arbitrary map key is used by terraform to plan the number of subnet associations to create
-  - `resource_id` - (Required) - The Azure Resource ID for the subnet to be associated to this NAT Gateway
+- `<map key>` - The unique arbitrary map key is used by terraform to plan the number of subnet associations to create
+  - `resource_id`      - The Azure Resource ID for the subnet to be associated to this NAT Gateway
+  - `address_prefix`   - (Optional) The address prefix of the subnet. Required if `address_prefixes` or `ipam_pool_id` is not provided.
+  - `address_prefixes` - (Optional) The address prefixes of the subnet. Required if `address_prefix` or `ipam_pool_id` is not provided.
+  - `ipam_pool_id`     - (Optional) The IPAM pool ID of the subnet. Required if `address_prefix` or `address_prefixes` is not provided.
 
 Example Input: 
 
 ```hcl
 subnet_associations = {
   subnet_1 = {
-    resource_id = azurerm_subnet.example.id
+    resource_id    = azurerm_subnet.example.id
+    address_prefix = "10.0.1.0/24"
+  }
+  subnet_2 = {
+    resource_id  = azurerm_subnet.example_ipam.id
+    ipam_pool_id = "ipam-pool-id"
   }
 }
 ```
 SUBNET_ASSOCIATIONS
+
+  validation {
+    condition = alltrue([
+      for k, v in var.subnet_associations :
+      (v.ipam_pool_id != null) != (v.address_prefix != null || v.address_prefixes != null)
+    ])
+    error_message = "Each subnet association must specify either `ipam_pool_id` OR (`address_prefix` / `address_prefixes`), but not both."
+  }
 }
 
 variable "tags" {
@@ -227,5 +318,5 @@ EOT
 variable "zones" {
   type        = set(string)
   default     = null
-  description = "(Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created."
+  description = "(Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created. If `sku_name` is `StandardV2`, this variable is ignored and defaults to `[\"1\", \"2\", \"3\"]`."
 }

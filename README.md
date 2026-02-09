@@ -18,8 +18,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
-
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
@@ -28,17 +26,21 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_nat_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/nat_gateway) (resource)
-- [azurerm_nat_gateway_public_ip_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/nat_gateway_public_ip_association) (resource)
-- [azurerm_nat_gateway_public_ip_prefix_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/nat_gateway_public_ip_prefix_association) (resource)
-- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
-- [azurerm_public_ip_prefix.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip_prefix) (resource)
-- [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-- [azurerm_subnet_nat_gateway_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_nat_gateway_association) (resource)
+- [azapi_resource.diagnostic_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.public_ip](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.public_ip_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.public_ip_prefix](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.public_ip_prefix_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.role_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource_action.subnet_association](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azapi_resource_action.subnet_disassociation](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
+- [random_uuid.role_assignment_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_client_config.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -67,6 +69,40 @@ Type: `string`
 ## Optional Inputs
 
 The following input variables are optional (have default values):
+
+### <a name="input_diagnostic_settings"></a> [diagnostic\_settings](#input\_diagnostic\_settings)
+
+Description: A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+- `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic settings.
+- `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
+- `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`. For StandardV2, `NatGatewayFlowLogsV1` is available within `allLogs`.
+- `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
+- `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
+- `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
+- `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
+- `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
+- `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
+- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace Partner Logic App to send logs and metrics to.
+
+Type:
+
+```hcl
+map(object({
+    name                                     = optional(string, null)
+    log_categories                           = optional(set(string), [])
+    log_groups                               = optional(set(string), ["allLogs"])
+    metric_categories                        = optional(set(string), ["AllMetrics"])
+    log_analytics_destination_type           = optional(string, "Dedicated")
+    workspace_resource_id                    = optional(string, null)
+    storage_account_resource_id              = optional(string, null)
+    event_hub_authorization_rule_resource_id = optional(string, null)
+    event_hub_name                           = optional(string, null)
+    marketplace_partner_resource_id          = optional(string, null)
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
 
@@ -106,39 +142,40 @@ Default: `null`
 
 ### <a name="input_public_ip_configuration"></a> [public\_ip\_configuration](#input\_public\_ip\_configuration)
 
-Description: This object describes the public IP configuration when creating Nat Gateway's with a public IP.  If creating more than one public IP, then these values will be used for all public IPs.
+Description: This map describes the public IP configuration. Keys in this map should match keys in `public_ips` or `public_ip_prefixes`.
 
-- `allocation_method`       = (Required) - Defines the allocation method for this IP address. Possible values are Static or Dynamic.
+- `allocation_method`       = (Optional) - Defines the allocation method for this IP address. Possible values are Static or Dynamic. Defaults to Static.
 - `ddos_protection_mode`    = (Optional) - The DDoS protection mode of the public IP. Possible values are Disabled, Enabled, and VirtualNetworkInherited. Defaults to VirtualNetworkInherited.
 - `ddos_protection_plan_id` = (Optional) - The ID of DDoS protection plan associated with the public IP. ddos\_protection\_plan\_id can only be set when ddos\_protection\_mode is Enabled
 - `domain_name_label`       = (Optional) - Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.
-- `idle_timeout_in_minutes` = (Optional) - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.
-- `inherit_tags`            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. - Future functionality leaving in.
-- `ip_version`              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6.
-- `lock_level`              = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-- `sku`                     = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Standard to support zones by default. Changing this forces a new resource to be created. When sku\_tier is set to Global, sku must be set to Standard.
-- `sku_tier`                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional
+- `idle_timeout_in_minutes` = (Optional) - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes. Defaults to 30.
+- `inherit_tags`            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied.
+- `ip_version`              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6. Defaults to IPv4.
+- `lock`                    = (Optional) - The lock level to apply to the public IP. Default is `null`.
+- `sku`                     = (Optional) - The SKU of the Public IP. Accepted values are Basic, Standard and StandardV2. Defaults to StandardV2.
+- `sku_tier`                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional.
 - `tags`                    = (Optional) - A mapping of tags to assign to the resource.  
-- `zones`                   = (Optional) - A list of zones where this public IP should be deployed. Defaults to 3 zones. If your region doesn't support zones, then you'll need to set this to null.  
+- `zones`                   = (Optional) - A list of zones where this public IP should be deployed. Defaults to 3 zones.  
 
-  Example Inputs:
+  Example Input:
 
 ```hcl
-#Standard Regional IPV4 Public IP address configuration
-public_ip_configuration_details = {
-  allocation_method       = "Static"
-  ddos_protection_mode    = "VirtualNetworkInherited"
-  idle_timeout_in_minutes = 30
-  ip_version              = "IPv4"
-  sku_tier                = "Regional"
-  sku                     = "Standard"
+public_ip_configuration = {
+  ip_1 = {
+    idle_timeout_in_minutes = 15
+    sku                     = "StandardV2"
+  },
+  prefix_1 = {
+    sku   = "StandardV2"
+    zones = ["1", "2", "3"]
+  }
 }
 ```
 
 Type:
 
 ```hcl
-object({
+map(object({
     allocation_method       = optional(string, "Static")
     ddos_protection_mode    = optional(string, "VirtualNetworkInherited")
     ddos_protection_plan_id = optional(string)
@@ -146,45 +183,84 @@ object({
     idle_timeout_in_minutes = optional(number, 30)
     inherit_tags            = optional(bool, false)
     ip_version              = optional(string, "IPv4")
-    lock_level              = optional(string, null)
-    sku                     = optional(string, "Standard")
-    sku_tier                = optional(string, "Regional")
-    tags                    = optional(map(string), null)
-    zones                   = optional(list(string), ["1", "2", "3"])
-  })
+    lock = optional(object({
+      kind = string
+      name = optional(string, null)
+    }), null)
+    sku      = optional(string, "StandardV2")
+    sku_tier = optional(string, "Regional")
+    tags     = optional(map(string), null)
+    zones    = optional(list(string), ["1", "2", "3"])
+  }))
 ```
 
-Default:
+Default: `{}`
 
-```json
-{
-  "allocation_method": "Static",
-  "ddos_protection_mode": "VirtualNetworkInherited",
-  "idle_timeout_in_minutes": 30,
-  "ip_version": "IPv4",
-  "sku": "Standard",
-  "sku_tier": "Regional",
-  "zones": [
-    "1",
-    "2",
-    "3"
-  ]
+### <a name="input_public_ip_prefix_resource_ids"></a> [public\_ip\_prefix\_resource\_ids](#input\_public\_ip\_prefix\_resource\_ids)
+
+Description: (Optional) A list of existing Public IP Prefix resource IDs to associate with the NAT Gateway. These must be IPv4 prefixes.
+
+Type: `set(string)`
+
+Default: `[]`
+
+### <a name="input_public_ip_prefix_v6_resource_ids"></a> [public\_ip\_prefix\_v6\_resource\_ids](#input\_public\_ip\_prefix\_v6\_resource\_ids)
+
+Description: (Optional) A list of existing Public IP Prefix resource IDs (IPv6) to associate with the NAT Gateway. Only supported when `sku_name` is `StandardV2`.
+
+Type: `set(string)`
+
+Default: `[]`
+
+### <a name="input_public_ip_prefixes"></a> [public\_ip\_prefixes](#input\_public\_ip\_prefixes)
+
+Description: This map will define public IP prefixes.
+- `<map key>` - The unique arbitrary map key.
+  - `name` - The name to use for this public IP prefix resource.
+  - `prefix_length` - (Optional) The Length of the Public IP Prefix. Defaults to 30.
+
+  Example Input:
+```hcl
+public_ip_prefixes = {
+  prefix_1 = {
+    name = "nat_gw_prefix_1"
+    prefix_length = 31
+  }
 }
 ```
 
-### <a name="input_public_ip_prefix_length"></a> [public\_ip\_prefix\_length](#input\_public\_ip\_prefix\_length)
+Type:
 
-Description: (Optional) Public IP-prefix CIDR mask to use. Set to 0 to disable.
+```hcl
+map(object({
+    name          = string
+    prefix_length = optional(number, 30)
+  }))
+```
 
-Type: `number`
+Default: `{}`
 
-Default: `0`
+### <a name="input_public_ip_resource_ids"></a> [public\_ip\_resource\_ids](#input\_public\_ip\_resource\_ids)
+
+Description: (Optional) A list of existing Public IP resource IDs to associate with the NAT Gateway. These must be IPv4 addresses.
+
+Type: `set(string)`
+
+Default: `[]`
+
+### <a name="input_public_ip_v6_resource_ids"></a> [public\_ip\_v6\_resource\_ids](#input\_public\_ip\_v6\_resource\_ids)
+
+Description: (Optional) A list of existing Public IP resource IDs (IPv6) to associate with the NAT Gateway. Only supported when `sku_name` is `StandardV2`.
+
+Type: `set(string)`
+
+Default: `[]`
 
 ### <a name="input_public_ips"></a> [public\_ips](#input\_public\_ips)
 
 Description: This map will define between 1 and 16 public IP's to assign to this NAT Gateway. The `public_ip_configuration` is used to configure common elements across all public IPs."
 
-- `<map key>` - (Required) - The unique arbitrary map key is used by terraform to plan the number of public IP's to create
+- `<map key>` - The unique arbitrary map key is used by terraform to plan the number of public IP's to create
   - `name` - The name to use for this public IP resource
 
 Example Input:
@@ -211,7 +287,7 @@ Default: `{}`
 
 Description:   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
-  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+  - `role_definition_id` - The ID of the role definition to assign to the principal.
   - `principal_id` - The ID of the principal to assign the role to.
   - `description` - (Optional) The description of the role assignment.
   - `skip_service_principal_aad_check` - (Optional) If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
@@ -226,7 +302,7 @@ Type:
 
 ```hcl
 map(object({
-    role_definition_id_or_name             = string
+    role_definition_id                     = string
     principal_id                           = string
     description                            = optional(string, null)
     skip_service_principal_aad_check       = optional(bool, false)
@@ -241,25 +317,33 @@ Default: `{}`
 
 ### <a name="input_sku_name"></a> [sku\_name](#input\_sku\_name)
 
-Description: (Optional) The SKU which should be used. At this time the only supported value is `Standard`. Defaults to `Standard`.
+Description: (Optional) The SKU which should be used. Possible values are `Standard` and `StandardV2`. Defaults to `StandardV2`.
 
 Type: `string`
 
-Default: `null`
+Default: `"StandardV2"`
 
 ### <a name="input_subnet_associations"></a> [subnet\_associations](#input\_subnet\_associations)
 
 Description: This map will define any subnet associations for this nat gateway. The
 
-- `<map key>` - (Required) - The unique arbitrary map key is used by terraform to plan the number of subnet associations to create
-  - `resource_id` - (Required) - The Azure Resource ID for the subnet to be associated to this NAT Gateway
+- `<map key>` - The unique arbitrary map key is used by terraform to plan the number of subnet associations to create
+  - `resource_id`      - The Azure Resource ID for the subnet to be associated to this NAT Gateway
+  - `address_prefix`   - (Optional) The address prefix of the subnet. Required if `address_prefixes` or `ipam_pool_id` is not provided.
+  - `address_prefixes` - (Optional) The address prefixes of the subnet. Required if `address_prefix` or `ipam_pool_id` is not provided.
+  - `ipam_pool_id`     - (Optional) The IPAM pool ID of the subnet. Required if `address_prefix` or `address_prefixes` is not provided.
 
 Example Input:
 
 ```hcl
 subnet_associations = {
   subnet_1 = {
-    resource_id = azurerm_subnet.example.id
+    resource_id    = azurerm_subnet.example.id
+    address_prefix = "10.0.1.0/24"
+  }
+  subnet_2 = {
+    resource_id  = azurerm_subnet.example_ipam.id
+    ipam_pool_id = "ipam-pool-id"
   }
 }
 ```
@@ -268,9 +352,11 @@ Type:
 
 ```hcl
 map(object({
-    resource_id = string
-    }
-  ))
+    resource_id      = string
+    address_prefix   = optional(string)
+    address_prefixes = optional(list(string))
+    ipam_pool_id     = optional(string)
+  }))
 ```
 
 Default: `{}`
@@ -305,7 +391,7 @@ Default: `null`
 
 ### <a name="input_zones"></a> [zones](#input\_zones)
 
-Description: (Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created.
+Description: (Optional) A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new NAT Gateway to be created. If `sku_name` is `StandardV2`, this variable is ignored and defaults to `["1", "2", "3"]`.
 
 Type: `set(string)`
 
@@ -315,9 +401,9 @@ Default: `null`
 
 The following outputs are exported:
 
-### <a name="output_public_ip_prefix_value"></a> [public\_ip\_prefix\_value](#output\_public\_ip\_prefix\_value)
+### <a name="output_public_ip_prefixes"></a> [public\_ip\_prefixes](#output\_public\_ip\_prefixes)
 
-Description: The CIDR provisioned for the public IP prefix
+Description: The public IP prefix resources.
 
 ### <a name="output_public_ip_resource"></a> [public\_ip\_resource](#output\_public\_ip\_resource)
 
