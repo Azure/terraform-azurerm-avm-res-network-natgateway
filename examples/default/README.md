@@ -72,9 +72,9 @@ module "natgateway" {
 
   location = azapi_resource.this.location
   # source             = "Azure/avm-res-network-natgateway/azurerm"
-  name                = module.naming.nat_gateway.name_unique
-  resource_group_name = azapi_resource.this.name
-  enable_telemetry    = true
+  name             = module.naming.nat_gateway.name_unique
+  parent_id        = azapi_resource.this.id
+  enable_telemetry = true
   public_ip_configuration = {
     public_ip_1 = {
       idle_timeout_in_minutes = 15
@@ -85,17 +85,6 @@ module "natgateway" {
       idle_timeout_in_minutes = 10
       sku                     = "Standard"
       zones                   = ["1", "2", "3"]
-    }
-    public_ip_prefix_1 = {
-      idle_timeout_in_minutes = 5
-      sku                     = "Standard"
-      zones                   = ["1", "2", "3"]
-    }
-  }
-  public_ip_prefixes = {
-    public_ip_prefix_1 = {
-      name          = "nat_gw_prefix1"
-      prefix_length = 30
     }
   }
   public_ips = {

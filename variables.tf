@@ -10,9 +10,9 @@ variable "name" {
   nullable    = false
 }
 
-variable "resource_group_name" {
+variable "parent_id" {
   type        = string
-  description = "(Required) Specifies the name of the Resource Group in which the NAT Gateway should exist. Changing this forces a new resource to be created."
+  description = "(Required) The resource ID of the Resource Group in which the NAT Gateway should exist. Changing this forces a new resource to be created."
   nullable    = false
 }
 
@@ -103,7 +103,7 @@ variable "public_ip_configuration" {
   }))
   default     = {}
   description = <<PUBLIC_IP_CONFIGURATION_DETAILS
-This map describes the public IP configuration. Keys in this map should match keys in `public_ips` or `public_ip_prefixes`.
+This map describes the public IP configuration. Keys in this map should match keys in `public_ips`.
 
 - `allocation_method`       = (Optional) - Defines the allocation method for this IP address. Possible values are Static or Dynamic. Defaults to Static.
 - `ddos_protection_mode`    = (Optional) - The DDoS protection mode of the public IP. Possible values are Disabled, Enabled, and VirtualNetworkInherited. Defaults to VirtualNetworkInherited.
@@ -126,10 +126,6 @@ public_ip_configuration = {
     idle_timeout_in_minutes = 15
     sku                     = "StandardV2"
   },
-  prefix_1 = {
-    sku   = "StandardV2"
-    zones = ["1", "2", "3"]
-  }
 }
 ```
 PUBLIC_IP_CONFIGURATION_DETAILS
@@ -148,30 +144,6 @@ variable "public_ip_prefix_v6_resource_ids" {
   default     = []
   description = "(Optional) A list of existing Public IP Prefix resource IDs (IPv6) to associate with the NAT Gateway. Only supported when `sku_name` is `StandardV2`."
   nullable    = false
-}
-
-variable "public_ip_prefixes" {
-  type = map(object({
-    name          = string
-    prefix_length = optional(number, 30)
-  }))
-  default     = {}
-  description = <<PUBLIC_IP_PREFIXES
-This map will define public IP prefixes.
-- `<map key>` - The unique arbitrary map key.
-  - `name` - The name to use for this public IP prefix resource.
-  - `prefix_length` - (Optional) The Length of the Public IP Prefix. Defaults to 30.
-
-  Example Input: 
-```hcl
-public_ip_prefixes = {
-  prefix_1 = {
-    name = "nat_gw_prefix_1"
-    prefix_length = 31
-  }
-}
-```
-PUBLIC_IP_PREFIXES
 }
 
 variable "public_ip_resource_ids" {

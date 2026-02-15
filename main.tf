@@ -1,9 +1,7 @@
-data "azapi_client_config" "this" {}
-
 resource "azapi_resource" "this" {
   location  = var.location
   name      = var.name
-  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${var.resource_group_name}"
+  parent_id = var.parent_id
   type      = "Microsoft.Network/natGateways@2025-03-01"
   body = {
     properties = {
@@ -24,22 +22,8 @@ resource "azapi_resource" "this" {
         ],
         [for id in var.public_ip_v6_resource_ids : { id = id }]
       )
-      publicIpPrefixes = concat([
-        for key, pf in azapi_resource.public_ip_prefix : {
-          id = pf.id
-        }
-        if lower(try(var.public_ip_configuration[key].ip_version, local.default_pip_config.ip_version)) == "ipv4"
-        ],
-        [for id in var.public_ip_prefix_resource_ids : { id = id }]
-      )
-      publicIpPrefixesV6 = concat([
-        for key, pf in azapi_resource.public_ip_prefix : {
-          id = pf.id
-        }
-        if lower(try(var.public_ip_configuration[key].ip_version, local.default_pip_config.ip_version)) == "ipv6"
-        ],
-        [for id in var.public_ip_prefix_v6_resource_ids : { id = id }]
-      )
+      publicIpPrefixes   = [for id in var.public_ip_prefix_resource_ids : { id = id }]
+      publicIpPrefixesV6 = [for id in var.public_ip_prefix_v6_resource_ids : { id = id }]
     }
     sku = {
       name = var.sku_name
@@ -71,10 +55,6 @@ resource "azapi_resource" "this" {
     precondition {
       condition     = var.sku_name == "StandardV2" && length(var.public_ips) > 0 ? alltrue([for c in values(var.public_ip_configuration) : c.sku == "StandardV2"]) : true
       error_message = "When using StandardV2 SKU for NAT Gateway, all Public IP configurations must specify StandardV2 SKU."
-    }
-    precondition {
-      condition     = var.sku_name == "StandardV2" && length(var.public_ip_prefixes) > 0 ? alltrue([for c in values(var.public_ip_configuration) : c.sku == "StandardV2"]) : true
-      error_message = "When using StandardV2 SKU for NAT Gateway, the Public IP Prefix configurations must specify StandardV2 SKU."
     }
     precondition {
       condition     = var.sku_name == "Standard" && var.zones != null ? length(var.zones) <= 1 : true
@@ -153,7 +133,7 @@ resource "azapi_resource" "role_assignment" {
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   body = {
     properties = {
-      roleDefinitionId                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value.role_definition_id_or_name}"
+      roleDefinitionId                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : "/subscriptions/${local.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value.role_definition_id_or_name}"
       principalId                        = each.value.principal_id
       principalType                      = each.value.principal_type
       description                        = each.value.description

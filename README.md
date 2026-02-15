@@ -30,8 +30,6 @@ The following resources are used by this module:
 - [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.public_ip](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.public_ip_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource.public_ip_prefix](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource.public_ip_prefix_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.role_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource_action.subnet_association](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
@@ -40,7 +38,6 @@ The following resources are used by this module:
 - [random_uuid.role_assignment_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
-- [azapi_client_config.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -60,9 +57,9 @@ Description: (Required) Specifies the name of the NAT Gateway. Changing this for
 
 Type: `string`
 
-### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
+### <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id)
 
-Description: (Required) Specifies the name of the Resource Group in which the NAT Gateway should exist. Changing this forces a new resource to be created.
+Description: (Required) The resource ID of the Resource Group in which the NAT Gateway should exist. Changing this forces a new resource to be created.
 
 Type: `string`
 
@@ -142,7 +139,7 @@ Default: `null`
 
 ### <a name="input_public_ip_configuration"></a> [public\_ip\_configuration](#input\_public\_ip\_configuration)
 
-Description: This map describes the public IP configuration. Keys in this map should match keys in `public_ips` or `public_ip_prefixes`.
+Description: This map describes the public IP configuration. Keys in this map should match keys in `public_ips`.
 
 - `allocation_method`       = (Optional) - Defines the allocation method for this IP address. Possible values are Static or Dynamic. Defaults to Static.
 - `ddos_protection_mode`    = (Optional) - The DDoS protection mode of the public IP. Possible values are Disabled, Enabled, and VirtualNetworkInherited. Defaults to VirtualNetworkInherited.
@@ -165,10 +162,6 @@ public_ip_configuration = {
     idle_timeout_in_minutes = 15
     sku                     = "StandardV2"
   },
-  prefix_1 = {
-    sku   = "StandardV2"
-    zones = ["1", "2", "3"]
-  }
 }
 ```
 
@@ -211,34 +204,6 @@ Description: (Optional) A list of existing Public IP Prefix resource IDs (IPv6) 
 Type: `set(string)`
 
 Default: `[]`
-
-### <a name="input_public_ip_prefixes"></a> [public\_ip\_prefixes](#input\_public\_ip\_prefixes)
-
-Description: This map will define public IP prefixes.
-- `<map key>` - The unique arbitrary map key.
-  - `name` - The name to use for this public IP prefix resource.
-  - `prefix_length` - (Optional) The Length of the Public IP Prefix. Defaults to 30.
-
-  Example Input:
-```hcl
-public_ip_prefixes = {
-  prefix_1 = {
-    name = "nat_gw_prefix_1"
-    prefix_length = 31
-  }
-}
-```
-
-Type:
-
-```hcl
-map(object({
-    name          = string
-    prefix_length = optional(number, 30)
-  }))
-```
-
-Default: `{}`
 
 ### <a name="input_public_ip_resource_ids"></a> [public\_ip\_resource\_ids](#input\_public\_ip\_resource\_ids)
 
@@ -400,10 +365,6 @@ Default: `null`
 ## Outputs
 
 The following outputs are exported:
-
-### <a name="output_public_ip_prefixes"></a> [public\_ip\_prefixes](#output\_public\_ip\_prefixes)
-
-Description: The public IP prefix resources.
 
 ### <a name="output_public_ip_resource"></a> [public\_ip\_resource](#output\_public\_ip\_resource)
 

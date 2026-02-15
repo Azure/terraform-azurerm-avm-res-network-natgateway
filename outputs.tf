@@ -1,8 +1,3 @@
-output "public_ip_prefixes" {
-  description = "The public IP prefix resources."
-  value       = azapi_resource.public_ip_prefix
-}
-
 output "public_ip_resource" {
   description = "The public IP resource."
   value       = azapi_resource.public_ip

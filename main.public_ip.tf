@@ -13,39 +13,6 @@ locals {
     tags                    = null
     zones                   = ["1", "2", "3"]
   }
-  public_ip_prefixes = var.public_ip_prefixes
-}
-
-resource "azapi_resource" "public_ip_prefix" {
-  for_each = local.public_ip_prefixes
-
-  location  = var.location
-  name      = each.value.name
-  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${var.resource_group_name}"
-  type      = "Microsoft.Network/publicIPPrefixes@2025-03-01"
-  body = {
-    properties = {
-      prefixLength           = each.value.prefix_length
-      publicIPAddressVersion = try(var.public_ip_configuration[each.key].ip_version, local.default_pip_config.ip_version)
-    }
-    sku = {
-      name = try(var.public_ip_configuration[each.key].sku, local.default_pip_config.sku)
-      tier = try(var.public_ip_configuration[each.key].sku_tier, local.default_pip_config.sku_tier)
-    }
-    zones = try(var.public_ip_configuration[each.key].zones, local.default_pip_config.zones)
-  }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  tags           = try(var.public_ip_configuration[each.key].tags, local.default_pip_config.tags) != null ? try(var.public_ip_configuration[each.key].tags, local.default_pip_config.tags) : var.tags
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-
-  lifecycle {
-    precondition {
-      condition     = try(var.public_ip_configuration[each.key].sku, local.default_pip_config.sku) == "StandardV2" ? length(try(var.public_ip_configuration[each.key].zones, local.default_pip_config.zones)) == 3 : true
-      error_message = "StandardV2 SKU must use all 3 zones."
-    }
-  }
 }
 
 resource "azapi_resource" "public_ip" {
@@ -53,7 +20,7 @@ resource "azapi_resource" "public_ip" {
 
   location  = var.location
   name      = each.value.name
-  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${var.resource_group_name}"
+  parent_id = var.parent_id
   type      = "Microsoft.Network/publicIPAddresses@2025-03-01"
   body = {
     properties = {
@@ -114,24 +81,4 @@ resource "azapi_resource" "public_ip_lock" {
   update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
-resource "azapi_resource" "public_ip_prefix_lock" {
-  for_each = {
-    for k, v in local.public_ip_prefixes : k => v
-    if try(var.public_ip_configuration[k].lock, local.default_pip_config.lock) != null
-  }
-
-  name      = try(var.public_ip_configuration[each.key].lock.name, local.default_pip_config.lock.name) == null ? "lock-${try(var.public_ip_configuration[each.key].lock.kind, local.default_pip_config.lock.kind)}" : try(var.public_ip_configuration[each.key].lock.name, local.default_pip_config.lock.name)
-  parent_id = azapi_resource.public_ip_prefix[each.key].id
-  type      = "Microsoft.Authorization/locks@2020-05-01"
-  body = {
-    properties = {
-      level = try(var.public_ip_configuration[each.key].lock.kind, local.default_pip_config.lock.kind)
-      notes = try(var.public_ip_configuration[each.key].lock.kind, local.default_pip_config.lock.kind) == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
-    }
-  }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-}
 
