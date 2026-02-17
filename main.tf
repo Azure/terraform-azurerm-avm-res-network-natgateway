@@ -48,10 +48,6 @@ resource "azapi_resource" "this" {
   }
 
   lifecycle {
-    ignore_changes = [
-      output.properties.subnets
-    ]
-
     precondition {
       condition     = var.sku_name == "StandardV2" && length(var.public_ips) > 0 ? alltrue([for c in values(var.public_ip_configuration) : c.sku == "StandardV2"]) : true
       error_message = "When using StandardV2 SKU for NAT Gateway, all Public IP configurations must specify StandardV2 SKU."
@@ -61,46 +57,6 @@ resource "azapi_resource" "this" {
       error_message = "Standard SKU NAT Gateway supports only a single zone (Zonal) or no zone (Regional)."
     }
   }
-}
-
-resource "azapi_resource_action" "subnet_association" {
-  for_each = var.subnet_associations
-
-  method      = "PUT"
-  resource_id = each.value.resource_id
-  type        = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
-  body = {
-    properties = {
-      addressPrefix             = each.value.address_prefix
-      addressPrefixes           = each.value.address_prefixes
-      ipamPoolPrefixAllocations = each.value.ipam_pool_id != null ? [{ ipamPoolId = each.value.ipam_pool_id, allocatedAddressPrefix = each.value.address_prefix }] : null
-      natGateway = {
-        id = azapi_resource.this.id
-      }
-    }
-  }
-  headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  when    = "apply"
-}
-
-resource "azapi_resource_action" "subnet_disassociation" {
-  for_each = var.subnet_associations
-
-  method      = "PUT"
-  resource_id = each.value.resource_id
-  type        = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
-  body = {
-    properties = {
-      addressPrefix             = each.value.address_prefix
-      addressPrefixes           = each.value.address_prefixes
-      ipamPoolPrefixAllocations = each.value.ipam_pool_id != null ? [{ ipamPoolId = each.value.ipam_pool_id, allocatedAddressPrefix = each.value.address_prefix }] : null
-      natGateway                = null
-    }
-  }
-  headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  when    = "destroy"
-
-  depends_on = [azapi_resource.this]
 }
 
 resource "azapi_resource" "lock" {

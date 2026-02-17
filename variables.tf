@@ -223,48 +223,6 @@ variable "sku_name" {
   }
 }
 
-variable "subnet_associations" {
-  type = map(object({
-    resource_id      = string
-    address_prefix   = optional(string)
-    address_prefixes = optional(list(string))
-    ipam_pool_id     = optional(string)
-  }))
-  default     = {}
-  description = <<SUBNET_ASSOCIATIONS
-This map will define any subnet associations for this nat gateway. The 
-
-- `<map key>` - The unique arbitrary map key is used by terraform to plan the number of subnet associations to create
-  - `resource_id`      - The Azure Resource ID for the subnet to be associated to this NAT Gateway
-  - `address_prefix`   - (Optional) The address prefix of the subnet. Required if `address_prefixes` or `ipam_pool_id` is not provided.
-  - `address_prefixes` - (Optional) The address prefixes of the subnet. Required if `address_prefix` or `ipam_pool_id` is not provided.
-  - `ipam_pool_id`     - (Optional) The IPAM pool ID of the subnet. Required if `address_prefix` or `address_prefixes` is not provided.
-
-Example Input: 
-
-```hcl
-subnet_associations = {
-  subnet_1 = {
-    resource_id    = azurerm_subnet.example.id
-    address_prefix = "10.0.1.0/24"
-  }
-  subnet_2 = {
-    resource_id  = azurerm_subnet.example_ipam.id
-    ipam_pool_id = "ipam-pool-id"
-  }
-}
-```
-SUBNET_ASSOCIATIONS
-
-  validation {
-    condition = alltrue([
-      for k, v in var.subnet_associations :
-      (v.ipam_pool_id != null) != (v.address_prefix != null || v.address_prefixes != null)
-    ])
-    error_message = "Each subnet association must specify either `ipam_pool_id` OR (`address_prefix` / `address_prefixes`), but not both."
-  }
-}
-
 variable "tags" {
   type        = map(string)
   default     = null

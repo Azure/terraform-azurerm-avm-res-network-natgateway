@@ -32,8 +32,6 @@ The following resources are used by this module:
 - [azapi_resource.public_ip_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.role_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource_action.subnet_association](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [azapi_resource_action.subnet_disassociation](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.role_assignment_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
@@ -287,44 +285,6 @@ Description: (Optional) The SKU which should be used. Possible values are `Stand
 Type: `string`
 
 Default: `"StandardV2"`
-
-### <a name="input_subnet_associations"></a> [subnet\_associations](#input\_subnet\_associations)
-
-Description: This map will define any subnet associations for this nat gateway. The
-
-- `<map key>` - The unique arbitrary map key is used by terraform to plan the number of subnet associations to create
-  - `resource_id`      - The Azure Resource ID for the subnet to be associated to this NAT Gateway
-  - `address_prefix`   - (Optional) The address prefix of the subnet. Required if `address_prefixes` or `ipam_pool_id` is not provided.
-  - `address_prefixes` - (Optional) The address prefixes of the subnet. Required if `address_prefix` or `ipam_pool_id` is not provided.
-  - `ipam_pool_id`     - (Optional) The IPAM pool ID of the subnet. Required if `address_prefix` or `address_prefixes` is not provided.
-
-Example Input:
-
-```hcl
-subnet_associations = {
-  subnet_1 = {
-    resource_id    = azurerm_subnet.example.id
-    address_prefix = "10.0.1.0/24"
-  }
-  subnet_2 = {
-    resource_id  = azurerm_subnet.example_ipam.id
-    ipam_pool_id = "ipam-pool-id"
-  }
-}
-```
-
-Type:
-
-```hcl
-map(object({
-    resource_id      = string
-    address_prefix   = optional(string)
-    address_prefixes = optional(list(string))
-    ipam_pool_id     = optional(string)
-  }))
-```
-
-Default: `{}`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 

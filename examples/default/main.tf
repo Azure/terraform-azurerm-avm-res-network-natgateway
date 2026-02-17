@@ -32,33 +32,6 @@ resource "azapi_resource" "this" {
   tags     = local.tags
 }
 
-resource "azapi_resource" "this_vnet" {
-  location  = azapi_resource.this.location
-  name      = module.naming.virtual_network.name_unique
-  parent_id = azapi_resource.this.id
-  type      = "Microsoft.Network/virtualNetworks@2024-01-01"
-  body = {
-    properties = {
-      addressSpace = {
-        addressPrefixes = ["10.0.0.0/16"]
-      }
-    }
-  }
-  tags = local.tags
-}
-
-resource "azapi_resource" "this_subnet" {
-  name      = "${module.naming.subnet.name_unique}-1"
-  parent_id = azapi_resource.this_vnet.id
-  type      = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
-  body = {
-    properties = {
-      addressPrefix = "10.0.1.0/24"
-    }
-  }
-  response_export_values = ["properties.addressPrefix"]
-}
-
 # This is the module call
 module "natgateway" {
   source = "../../"
@@ -89,10 +62,4 @@ module "natgateway" {
     }
   }
   sku_name = "Standard"
-  subnet_associations = {
-    subnet_1 = {
-      resource_id    = azapi_resource.this_subnet.id
-      address_prefix = azapi_resource.this_subnet.output.properties.addressPrefix
-    }
-  }
 }
