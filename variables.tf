@@ -18,10 +18,24 @@ variable "parent_id" {
 
 variable "diagnostic_settings" {
   type = map(object({
-    name                                     = optional(string, null)
-    log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), ["allLogs"])
-    metric_categories                        = optional(set(string), ["AllMetrics"])
+    name = optional(string, null)
+    logs = optional(set(object({
+      category       = optional(string, null)
+      category_group = optional(string, null)
+      enabled        = optional(bool, true)
+      retention_policy = optional(object({
+        days    = optional(number, 0)
+        enabled = optional(bool, false)
+      }), {})
+    })), [])
+    metrics = optional(set(object({
+      category = optional(string, null)
+      enabled  = optional(bool, true)
+      retention_policy = optional(object({
+        days    = optional(number, 0)
+        enabled = optional(bool, false)
+      }), {})
+    })), [])
     log_analytics_destination_type           = optional(string, "Dedicated")
     workspace_resource_id                    = optional(string, null)
     storage_account_resource_id              = optional(string, null)
@@ -34,9 +48,19 @@ variable "diagnostic_settings" {
 A map of diagnostic settings to create on the NAT Gateway. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
-- `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
-- `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
-- `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
+- `logs` - (Optional) A set of log configuration objects. Each object may specify:
+  - `category` - (Optional) The name of a Diagnostic Log Category for this resource.
+  - `category_group` - (Optional) The name of a Diagnostic Log Category Group for this resource.
+  - `enabled` - (Optional) Whether this log category is enabled. Defaults to `true`.
+  - `retention_policy` - (Optional) A retention policy object:
+    - `days` - (Optional) The number of days for which this Retention Policy should apply. Defaults to `0`.
+    - `enabled` - (Optional) Whether the Retention Policy is enabled. Defaults to `false`.
+- `metrics` - (Optional) A set of metric configuration objects. Each object may specify:
+  - `category` - (Optional) The name of a Diagnostic Metric Category for this resource.
+  - `enabled` - (Optional) Whether this metric category is enabled. Defaults to `true`.
+  - `retention_policy` - (Optional) A retention policy object:
+    - `days` - (Optional) The number of days for which this Retention Policy should apply. Defaults to `0`.
+    - `enabled` - (Optional) Whether the Retention Policy is enabled. Defaults to `false`.
 - `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
 - `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
 - `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
