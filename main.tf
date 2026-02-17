@@ -59,45 +59,43 @@ resource "azapi_resource" "this" {
   }
 }
 
+module "avm_interfaces" {
+  source  = "Azure/avm-utl-interfaces/azure"
+  version = "0.5.0"
+
+  diagnostic_settings_v2                    = var.diagnostic_settings
+  enable_telemetry                          = var.enable_telemetry
+  lock                                      = var.lock
+  role_assignment_definition_lookup_enabled = true
+  role_assignment_definition_scope          = "/subscriptions/${local.subscription_id}"
+  role_assignments                          = var.role_assignments
+}
+
 resource "azapi_resource" "lock" {
   count = var.lock != null ? 1 : 0
 
-  name      = coalesce(var.lock.name, "lock-${var.lock.kind}")
-  parent_id = azapi_resource.this.id
-  type      = "Microsoft.Authorization/locks@2020-05-01"
-  body = {
-    properties = {
-      level = var.lock.kind
-      notes = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
-    }
-  }
+  name           = module.avm_interfaces.lock_azapi.name
+  parent_id      = azapi_resource.this.id
+  type           = module.avm_interfaces.lock_azapi.type
+  body           = module.avm_interfaces.lock_azapi.body
   create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-}
 
-resource "random_uuid" "role_assignment_name" {
-  for_each = var.role_assignments
+  depends_on = [
+    azapi_resource.diagnostic_setting,
+    azapi_resource.role_assignment,
+  ]
 }
 
 resource "azapi_resource" "role_assignment" {
-  for_each = var.role_assignments
+  for_each = module.avm_interfaces.role_assignments_azapi
 
-  name      = random_uuid.role_assignment_name[each.key].result
-  parent_id = azapi_resource.this.id
-  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
-  body = {
-    properties = {
-      roleDefinitionId                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : "/subscriptions/${local.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value.role_definition_id_or_name}"
-      principalId                        = each.value.principal_id
-      principalType                      = each.value.principal_type
-      description                        = each.value.description
-      condition                          = each.value.condition
-      conditionVersion                   = each.value.condition_version
-      delegatedManagedIdentityResourceId = each.value.delegated_managed_identity_resource_id
-    }
-  }
+  name           = each.value.name
+  parent_id      = azapi_resource.this.id
+  type           = each.value.type
+  body           = each.value.body
   create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
@@ -108,65 +106,16 @@ resource "azapi_resource" "role_assignment" {
   update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
-resource "azapi_resource" "diagnostic_settings" {
-  for_each = var.diagnostic_settings
+resource "azapi_resource" "diagnostic_setting" {
+  for_each = module.avm_interfaces.diagnostic_settings_azapi_v2
 
-  name      = try(each.value.name, "diag-${each.key}")
-  parent_id = azapi_resource.this.id
-  type      = "Microsoft.Insights/diagnosticSettings@2021-05-01-preview"
-  body = {
-    properties = {
-      storageAccountId            = each.value.storage_account_resource_id
-      workspaceId                 = each.value.workspace_resource_id
-      eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
-      eventHubName                = each.value.event_hub_name
-      marketplacePartnerId        = each.value.marketplace_partner_resource_id
-      logAnalyticsDestinationType = each.value.log_analytics_destination_type
-
-      logs = concat(
-        [
-          for category in each.value.log_categories : {
-            category = category
-            enabled  = true
-            retentionPolicy = {
-              enabled = false
-              days    = 0
-            }
-          }
-        ],
-        [
-          for group in each.value.log_groups : {
-            categoryGroup = group
-            enabled       = true
-            retentionPolicy = {
-              enabled = false
-              days    = 0
-            }
-          }
-        ]
-      )
-
-      metrics = [
-        for category in each.value.metric_categories : {
-          category = category
-          enabled  = true
-          retentionPolicy = {
-            enabled = false
-            days    = 0
-          }
-        }
-      ]
-    }
-  }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-
-  lifecycle {
-    precondition {
-      condition     = var.sku_name == "StandardV2" || (length(each.value.log_categories) == 0 && length(each.value.log_groups) == 0)
-      error_message = "Diagnostic Logs are only supported for the 'StandardV2' SKU. The 'Standard' SKU only supports Metrics. Please ensure 'log_categories' and 'log_groups' are empty when using 'Standard' SKU."
-    }
-  }
+  name                 = each.value.name
+  parent_id            = azapi_resource.this.id
+  type                 = each.value.type
+  body                 = each.value.body
+  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property = true
+  read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
