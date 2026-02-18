@@ -1,4 +1,3 @@
-# TODO: insert locals here.
 locals {
-  role_definition_resource_substring = "providers/Microsoft.Authorization/roleDefinitions"
+  subscription_id = provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", var.parent_id).subscription_id
 }
