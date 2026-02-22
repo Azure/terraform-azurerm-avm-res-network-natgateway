@@ -48,6 +48,10 @@ resource "azapi_resource" "this" {
   }
 
   lifecycle {
+    ignore_changes = [
+      body.zones
+    ]
+
     precondition {
       condition     = var.sku_name == "StandardV2" && length(var.public_ips) > 0 ? alltrue([for c in values(var.public_ip_configuration) : c.sku == "StandardV2"]) : true
       error_message = "When using StandardV2 SKU for NAT Gateway, all Public IP configurations must specify StandardV2 SKU."
