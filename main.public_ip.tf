@@ -53,6 +53,8 @@ resource "azapi_resource" "public_ip" {
   update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   lifecycle {
+    ignore_changes = [body.zones]
+
     precondition {
       condition     = try(var.public_ip_configuration[each.key].sku, local.default_pip_config.sku) == "StandardV2" ? length(try(var.public_ip_configuration[each.key].zones, local.default_pip_config.zones)) == 3 : true
       error_message = "StandardV2 SKU must use all 3 zones."
