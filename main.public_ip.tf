@@ -82,5 +82,3 @@ resource "azapi_resource" "public_ip_lock" {
   read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
-
-
