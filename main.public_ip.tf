@@ -46,11 +46,7 @@ resource "azapi_resource" "public_ip" {
     }
     zones = try(var.public_ip_configuration[each.key].zones, local.default_pip_config.zones)
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  tags           = try(var.public_ip_configuration[each.key].tags, local.default_pip_config.tags) != null ? try(var.public_ip_configuration[each.key].tags, local.default_pip_config.tags) : var.tags
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  tags = try(var.public_ip_configuration[each.key].tags, local.default_pip_config.tags) != null ? try(var.public_ip_configuration[each.key].tags, local.default_pip_config.tags) : var.tags
 
   lifecycle {
     ignore_changes = [body.zones]
@@ -77,8 +73,4 @@ resource "azapi_resource" "public_ip_lock" {
       notes = try(var.public_ip_configuration[each.key].lock.kind, local.default_pip_config.lock.kind) == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
     }
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
