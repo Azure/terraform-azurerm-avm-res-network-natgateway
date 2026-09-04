@@ -30,11 +30,7 @@ resource "azapi_resource" "this" {
     }
     zones = var.sku_name == "StandardV2" ? ["1", "2", "3"] : var.zones
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  tags           = var.tags
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  tags = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -78,14 +74,10 @@ module "avm_interfaces" {
 resource "azapi_resource" "lock" {
   count = var.lock != null ? 1 : 0
 
-  name           = module.avm_interfaces.lock_azapi.name
-  parent_id      = azapi_resource.this.id
-  type           = module.avm_interfaces.lock_azapi.type
-  body           = module.avm_interfaces.lock_azapi.body
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  name      = module.avm_interfaces.lock_azapi.name
+  parent_id = azapi_resource.this.id
+  type      = module.avm_interfaces.lock_azapi.type
+  body      = module.avm_interfaces.lock_azapi.body
 
   depends_on = [
     azapi_resource.diagnostic_setting,
@@ -96,18 +88,14 @@ resource "azapi_resource" "lock" {
 resource "azapi_resource" "role_assignment" {
   for_each = module.avm_interfaces.role_assignments_azapi
 
-  name           = each.value.name
-  parent_id      = azapi_resource.this.id
-  type           = each.value.type
-  body           = each.value.body
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  name      = each.value.name
+  parent_id = azapi_resource.this.id
+  type      = each.value.type
+  body      = each.value.body
   # AVM requires retries for role assignments for improved reliability
   retry = {
     error_message_regex = ["PrincipalNotFound"]
   }
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 resource "azapi_resource" "diagnostic_setting" {
@@ -117,9 +105,5 @@ resource "azapi_resource" "diagnostic_setting" {
   parent_id            = azapi_resource.this.id
   type                 = each.value.type
   body                 = each.value.body
-  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_null_property = true
-  read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
