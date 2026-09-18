@@ -8,7 +8,7 @@ This deploys the module in its simplest form.
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.11.0"
+  version = "0.12.0"
 
   enable_telemetry       = var.enable_telemetry
   has_availability_zones = true
@@ -136,7 +136,7 @@ Version:
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.11.0
+Version: 0.12.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
