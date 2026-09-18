@@ -10,7 +10,7 @@ module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
   version = "0.11.0"
 
-  enable_telemetry       = false
+  enable_telemetry       = var.enable_telemetry
   has_availability_zones = true
 }
 
@@ -48,7 +48,7 @@ module "natgateway" {
   # source             = "Azure/avm-res-network-natgateway/azurerm"
   name             = module.naming.nat_gateway.name_unique
   parent_id        = azapi_resource.this.id
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   public_ip_configuration = {
     public_ip_1 = {
       idle_timeout_in_minutes = 15
@@ -100,7 +100,17 @@ No required inputs.
 
 ## Optional Inputs
 
-No optional inputs.
+The following input variables are optional (have default values):
+
+### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
+
+Description: This variable controls whether or not telemetry is enabled for the module.  
+For more information see <https://aka.ms/avm/telemetryinfo>.  
+If it is set to false, then no telemetry will be collected.
+
+Type: `bool`
+
+Default: `false`
 
 ## Outputs
 

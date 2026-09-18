@@ -3,7 +3,7 @@ module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
   version = "0.11.0"
 
-  enable_telemetry       = false
+  enable_telemetry       = var.enable_telemetry
   has_availability_zones = true
 }
 
@@ -41,7 +41,7 @@ module "natgateway" {
   # source             = "Azure/avm-res-network-natgateway/azurerm"
   name             = module.naming.nat_gateway.name_unique
   parent_id        = azapi_resource.this.id
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   public_ip_configuration = {
     public_ip_1 = {
       idle_timeout_in_minutes = 15
