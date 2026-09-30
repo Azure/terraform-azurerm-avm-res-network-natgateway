@@ -8,7 +8,7 @@ This deploys the module in its simplest form.
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.11.0"
+  version = "0.12.0"
 
   enable_telemetry       = var.enable_telemetry
   has_availability_zones = true
@@ -23,7 +23,7 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.3"
+  version = "0.4.4"
 }
 
 locals {
@@ -124,7 +124,7 @@ The following Modules are called:
 
 Source: Azure/naming/azurerm
 
-Version: 0.4.3
+Version: 0.4.4
 
 ### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
 
@@ -136,7 +136,7 @@ Version:
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.11.0
+Version: 0.12.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
