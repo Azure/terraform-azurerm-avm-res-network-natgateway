@@ -8,8 +8,9 @@ This deploys the module in its simplest form.
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.11.0"
+  version = "0.13.0"
 
+  location               = var.location
   enable_telemetry       = var.enable_telemetry
   has_availability_zones = true
 }
@@ -22,8 +23,8 @@ resource "random_integer" "region_index" {
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.4.3"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 locals {
@@ -43,6 +44,9 @@ resource "azapi_resource" "this" {
 # This is the module call
 module "natgateway" {
   source = "../../"
+  providers = {
+    azapi = azapi
+  }
 
   location = azapi_resource.this.location
   # source             = "Azure/avm-res-network-natgateway/azurerm"
@@ -112,6 +116,14 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for this module's resources or telemetry deployment.
+
+Type: `string`
+
+Default: `"eastus"`
+
 ## Outputs
 
 No outputs.
@@ -122,9 +134,9 @@ The following Modules are called:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
-Source: Azure/naming/azurerm
+Source: Azure/avm-utl-naming/azure
 
-Version: 0.4.3
+Version: 0.2.0
 
 ### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
 
@@ -136,7 +148,7 @@ Version:
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.11.0
+Version: 0.13.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
