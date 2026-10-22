@@ -37,9 +37,6 @@ resource "azapi_resource" "this" {
 # This is the module call
 module "natgateway" {
   source = "../../"
-  providers = {
-    azapi = azapi
-  }
 
   location = azapi_resource.this.location
   # source             = "Azure/avm-res-network-natgateway/azurerm"
